@@ -1,7 +1,7 @@
 #include "FastLED.h"
 
 // Number of LED's we are running
-#define NUM_LEDS 5
+#define NUM_LEDS 4
 // Data pin we're outputting to
 #define DATA_PIN 0
 // Pin used for clock
@@ -25,11 +25,23 @@ void setup() {
 
 // List of patterns to cycle through.  Each is defined as a separate function below.
 typedef void (*SimplePatternList[])();
-SimplePatternList gPatterns = { rainbow, sinelon, juggle };
+SimplePatternList gPatterns = {
+  rainbow,        // 0
+  sinelon,        // 1
+  juggle,         // 2
+  solidgreen,     // 3
+  solidblue,      // 4
+  solidpurple,    // 5
+  solidred,       // 6
+  solidyellow,    // 7
+  sinelonextra,   // 8
+  thruster        // 9
+};
 
-uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
+uint8_t gCurrentPatternNumber = 9; // Index number of which pattern is current
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
-bool isFixed = false; // if the colour is fixed do not rotate hue..
+bool gIsHueFixed = false; // if the colour is fixed do not rotate hue..
+uint8_t gLastLED = 0;
 
 void loop()
 {
@@ -44,11 +56,12 @@ void loop()
 	// do some periodic updates
 	EVERY_N_MILLISECONDS( 20 )
 	{
-    if (!isFixed) {
+    if (!gIsHueFixed) { // i
   		  gHue++;    // slowly cycle the "base color" through the rainbow
     }
 	}
 
+  // If the button has been pressed change the pattern.
   if (digitalRead(BUTTON_PIN) == HIGH) {
     nextPattern();
   }
@@ -72,8 +85,29 @@ void sinelon()
 {
 	// a colored dot sweeping back and forth, with fading trails
 	fadeToBlackBy( leds, NUM_LEDS, 20);
-	int pos = beatsin16(13, 0, NUM_LEDS);
+	int pos = beatsin16(20, 0, NUM_LEDS);
 	leds[pos] += CHSV( gHue, 255, 192);
+}
+
+void sinelonextra()
+{
+	// a colored dot sweeping back and forth, with fading trails
+	fadeToBlackBy( leds, NUM_LEDS, 20);
+	int pos = (beatsin16(20, 0, (NUM_LEDS+2))-1);
+  if (pos >= 0) {
+  	leds[pos] += CHSV( gHue, 255, 192);
+  }
+}
+
+void thruster() {
+  fadeToBlackBy(leds, NUM_LEDS, 20);
+  int pos = beatsin16(50, 0, NUM_LEDS);
+
+  if (pos > gLastLED) {
+    leds[pos-1] += CHSV( gHue, 255, 192);
+  }
+
+  gLastLED = pos;
 }
 
 void juggle()
@@ -87,3 +121,40 @@ void juggle()
 		dothue += 32;
 	}
 }
+
+void solidgreen() {
+  gIsHueFixed = true;
+  gHue = 0;
+  sinelon();
+}
+
+void solidblue() {
+  gIsHueFixed = true;
+  gHue = 160;
+  sinelon();
+}
+
+void solidpurple() {
+  gIsHueFixed = true;
+  gHue = 130;
+  sinelon();
+}
+
+void solidred() {
+  gIsHueFixed = true;
+  gHue = 96;
+  sinelon();
+}
+
+void solidyellow() {
+  gIsHueFixed = true;
+  gHue = 87;
+  sinelon();
+}
+
+// 0 =  green
+// 96 = red
+// 100 = pink
+// 130 = purple
+// 160 = blue
+// 230 = lightblue
